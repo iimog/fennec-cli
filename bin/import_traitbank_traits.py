@@ -34,6 +34,8 @@ with conn:
         eol_traitbank_dbid = rows[0][0]
 
 def get_or_insert_dbxref(cvterm, dbid):
+    #cvterm name is varchar(255)
+    cvterm = cvterm[0:255]
     with conn:
         with conn.cursor() as cur:
             cur.execute("""SELECT dbxref_id FROM dbxref WHERE accession='"""+cvterm+"""' AND db_id="""+str(dbid))
@@ -106,15 +108,15 @@ for element in data["@graph"]:
         type_cvterm_id = get_or_insert_cvterm(element["dwc:measurementType"]["@id"], eol_traitbank_cvid, eol_traitbank_dbid)
         try:
             value = float(element["dwc:measurementValue"])
-            cur.execute("""INSERT INTO trait_entry (organism_id, type_cvterm_id, value) VALUES ("""+str(organism_id)+","+str(type_cvterm_id)+""","""+value+""") RETURNING trait_entry_id""")
+            cur.execute("""INSERT INTO trait_entry (organism_id, type_cvterm_id, value) VALUES ("""+str(organism_id)+","+str(type_cvterm_id)+""","""+str(value)+""") RETURNING trait_entry_id""")
             rows = cur.fetchall()
-        # The value is an object
         except (TypeError):
+            # The value is an object
             value_cvterm_id = get_or_insert_cvterm(element["dwc:measurementValue"]["@id"], eol_traitbank_cvid, eol_traitbank_dbid)
             cur.execute("""INSERT INTO trait_entry (organism_id, type_cvterm_id, value_cvterm_id) VALUES ("""+str(organism_id)+","+str(type_cvterm_id)+""","""+str(value_cvterm_id)+""") RETURNING trait_entry_id""")
             rows = cur.fetchall()
-        # The value is a string
         except (ValueError):
+            # The value is a string
             value_cvterm_id = get_or_insert_cvterm(element["dwc:measurementValue"], eol_traitbank_cvid, eol_traitbank_dbid)
             cur.execute("""INSERT INTO trait_entry (organism_id, type_cvterm_id, value_cvterm_id) VALUES ("""+str(organism_id)+","+str(type_cvterm_id)+""","""+str(value_cvterm_id)+""") RETURNING trait_entry_id""")
             rows = cur.fetchall()
