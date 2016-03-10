@@ -13,11 +13,11 @@ except:
 with conn:
     with conn.cursor() as cur:
         cur = conn.cursor()
-        cur.execute("""SELECT cv_id FROM cv WHERE name='EOL TraitBank'""")
+        cur.execute("SELECT cv_id FROM cv WHERE name='EOL TraitBank'")
         rows = cur.fetchall()
         if (len(rows) < 1):
             print "No EOL TraitBank cv - inserting entry"
-            cur.execute("""INSERT INTO cv (name) VALUES ('EOL TraitBank') RETURNING cv_id""")
+            cur.execute("INSERT INTO cv (name) VALUES ('EOL TraitBank') RETURNING cv_id")
             rows = cur.fetchall()
         eol_traitbank_cvid = rows[0][0]
 
@@ -25,11 +25,11 @@ with conn:
 with conn:
     with conn.cursor() as cur:
         cur = conn.cursor()
-        cur.execute("""SELECT db_id FROM db WHERE name='EOL TraitBank'""")
+        cur.execute("SELECT db_id FROM db WHERE name='EOL TraitBank'")
         rows = cur.fetchall()
         if (len(rows) < 1):
             print "No EOL TraitBank db - inserting entry"
-            cur.execute("""INSERT INTO db (name) VALUES ('EOL TraitBank') RETURNING db_id""")
+            cur.execute("INSERT INTO db (name) VALUES ('EOL TraitBank') RETURNING db_id")
             rows = cur.fetchall()
         eol_traitbank_dbid = rows[0][0]
 
@@ -38,7 +38,7 @@ def get_or_insert_dbxref(cvterm, dbid):
     cvterm = cvterm[0:255]
     with conn:
         with conn.cursor() as cur:
-            cur.execute("""SELECT dbxref_id FROM dbxref WHERE accession='"""+cvterm+"""' AND db_id="""+str(dbid))
+            cur.execute("SELECT dbxref_id FROM dbxref WHERE accession=%s AND db_id=%s", (cvterm,dbid))
             rows = cur.fetchall()
             if (len(rows) < 1):
                 print "dbxref '"+cvterm+"' missing - inserting entry"
