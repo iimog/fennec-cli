@@ -3,10 +3,9 @@
 import sys
 import json
 import psycopg2
-from dns.rdatatype import NULL
 
 try:
-    conn = psycopg2.connect(dbname='test', user='test', host='127.0.0.1', password='test', port=54322)
+    conn = psycopg2.connect(dbname='chado', user='fennec', host='172.17.0.6', password='fennec', port=5432)
 except:
     print "I am unable to connect to the database"
 

@@ -7,7 +7,7 @@ with open(sys.argv[1]) as f:
     content = f.readlines();
 
 try:
-    conn = psycopg2.connect(dbname='chado', user='fennec', host='127.0.0.1', password='fennec', port=54321)
+    conn = psycopg2.connect(dbname='chado', user='fennec', host='172.17.0.6', password='fennec', port=5432)
 except:
     print "I am unable to connect to the database"
 
