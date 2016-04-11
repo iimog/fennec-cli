@@ -1,0 +1,6 @@
+* Command line tools for Fennec
+This repo contains the command line programs to import data into Fennec databases
+along with documentation and instructions on how to use them.
+** Changes
+*** 0.1.0 <2016-04-11 Mo>
+ - Basic importer scripts in python (untested)
