@@ -1,6 +1,7 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import sys
+import psycopg2
 from optparse import OptionParser
 
 version = "0.1"
@@ -17,8 +18,30 @@ parser.add_option("--db-user", dest="db_user", help="database user (default: %de
 parser.add_option("--db-password", dest="db_pw", help="database password (default: %default)", default='fennec')
 parser.add_option("--db-name", dest="db_name", help="database name (default: %default)", default='fennec')
 parser.add_option("--db-host", dest="db_host", help="database host (default: %default)", default='localhost')
+parser.add_option("--db-port", dest="db_port", help="database port (default: %default)", default='5432')
 
 (options, args) = parser.parse_args()
 
-print(options)
-print(args)
+if not options.trait_type:
+    parser.error('No trait type given. Use --trait-type')
+if not options.user_id:
+    parser.error('No user ID given. Use --user-id')
+if len(args) < 1:
+    parser.error('No file for import given. Please provide at least one tsv file')
+
+try:
+    conn = psycopg2.connect(dbname=options.db_name, user=options.db_user, host=options.db_host, password=options.db_pw, port=options.db_port, connect_timeout=3)
+except:
+    print("I am unable to connect to the database")
+    sys.exit(1)
+
+def get_trait_type_id():
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT id FROM trait_type WHERE type=%s", (options.trait_type,))
+            rows = cur.fetchall()
+            if (len(rows) < 1):
+                return -1
+    return rows[0][0]
+
+print(get_trait_type_id())
