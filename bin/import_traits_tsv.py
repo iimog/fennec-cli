@@ -44,4 +44,47 @@ def get_trait_type_id():
                 return -1
     return rows[0][0]
 
-print(get_trait_type_id())
+trait_type_id = get_trait_type_id()
+
+if trait_type_id == -1:
+    print("This trait type does not exist in the database. Please create it there")
+    sys.exit(1)
+
+def get_ncbi_taxonomy_db_id():
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute("""SELECT db_id FROM db WHERE name='DB:NCBI_taxonomy'""")
+            rows = cur.fetchall()
+            if (len(rows) < 1):
+                return -1
+            return rows[0][0]
+
+ncbi_taxonomy_db_id = get_ncbi_taxonomy_db_id()
+if ncbi_taxonomy_db_id == -1:
+    print("Error no db NCBI Taxonomy - so mapping to organism_ids not possible")
+    sys.exit(1)
+
+def get_or_insert_trait_categorical_value(value, ontology_url):
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT id FROM trait_categorical_value WHERE value=%s AND ontology_url=%s AND trait_type_id=%s", (value, ontology_url, trait_type_id))
+            rows = cur.fetchall()
+            if (len(rows) < 1):
+                print("value '"+value+"' missing - inserting entry")
+                cur.execute("INSERT INTO trait_categorical_value (value, ontology_url, trait_type_id) VALUES (%s, %s, %s) RETURNING id", (value, ontology_url, trait_type_id))
+                rows = cur.fetchall()
+    return rows[0][0]
+
+def get_or_insert_trait_citation(citation):
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT id FROM trait_citation WHERE citation=%s", (citation,))
+            rows = cur.fetchall()
+            if (len(rows) < 1):
+                print("citation '"+citation+"' missing - inserting entry")
+                cur.execute("INSERT INTO trait_citation (citation) VALUES (%s) RETURNING id", (citation))
+                rows = cur.fetchall()
+    return rows[0][0]
+
+def insert_trait_categorical_entry(row):
+    (ncbi_taxid, value, value_ontology, citation, origin_url, private, creation_date, deletion_date) = row
