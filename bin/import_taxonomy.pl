@@ -4,7 +4,6 @@ use strict;
 use warnings;
 use DBI;
 use Getopt::Long;
-use Data::Dumper;
 
 =pod
 =head1 Script import_taxonomy.pl
@@ -70,12 +69,11 @@ if (! GetOptions( "help"          => \$options{help},
 # if the help is wanted or provider/input parameter is missing
 if ($options{help} || !$options{provider} || !$options{input})
 {
-    # TODO update help message
     # ...we will print the help message
     print "\n\n***** ".__FILE__." *** version: $VERSION *****\n\n";
     print "Allowed parameters:\n".
           "\t--provider      \tname of the taxonomy provider (e.g. ncbi_taxonomy), will be added to db if not exists (required)\n".
-          "\t--input         \tinput tsv file with three columns: fennec_id, parent_fennec_id, rank (required)\n".
+          "\t--input         \tinput tsv file with three columns: fennec_id, parent_fennec_id, rank (required) There has to be exactly one root node (a line where fennec_id and parent_fennec_id are identical)\n".
           "\t--description   \tdescription of the taxonomy provider, only used if newly created (default '')\n".
           "\t--db-user       \tuser of the database (default 'fennec')\n".
           "\t--db-password   \tpassword of the database user (default 'fennec')\n".
