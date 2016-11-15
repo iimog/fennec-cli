@@ -4,7 +4,6 @@ use strict;
 use warnings;
 use DBI;
 use Getopt::Long;
-use Data::Dumper;
 
 =pod
 =head1 Script import_taxonomy.pl
@@ -43,7 +42,9 @@ my %options = (
            "db_name"     => 'fennec',
            "db_host"     => 'localhost',
            "db_port"     => 5432,
-	       "transfer"    => 0
+	       "transfer"    => 0,
+	       "provider"    => undef,
+           "description" => ''
 	      );
 
 $log->debug("Parsing the given commandline options");
@@ -56,16 +57,19 @@ if (! GetOptions( "help"          => \$options{help},
                   "db-name=s"     => \$options{db_name},
                   "db-host=s"     => \$options{db_host},
                   "db-port=i"     => \$options{db_port},
-                  "transfer!"     => \$options{transfer}))
+                  "transfer!"     => \$options{transfer},
+                  "provider=s"    => \$options{provider},
+                  "description=s" => \$options{description}))
 {
     # if the option parsing was not successful, we want to activate
     # the help function
     $options{help} = 1;
 }
 
-# if the help is wanted...
-if ($options{help})
+# if the help is wanted or provider/input parameter is missing
+if ($options{help} || !$options{provider} || !$options{input})
 {
+    # TODO update help message
     # ...we will print the help message
     print "\n\n***** ".__FILE__." *** version: $VERSION *****\n\n";
     print "Allowed parameters:\n".
@@ -83,10 +87,13 @@ $log->info("***** ".__FILE__." *** version: $VERSION *****");
 $log->info("Options: ".join(", ", map {"$_ = ".((defined $options{$_}) ? $options{$_} : "undef")} (keys %options)));
 
 ########## TODO Get max taxonomy_node_id and right_idx
+my $dbh = DBI->connect("dbi:Pg:dbname=$options{db_name};host=$options{db_host};port=$options{db_port};", $options{db_user}, $options{db_password});
+unless($dbh){
+    $log->logdie('Unable to connect to the database. Check parameters.');
+}
+$log->info('Successfully connected to the database.');
 my $start_left_idx = 1;
 my $start_taxonomy_node_id = 1;
-
-my %fennec_id2node_id = ();
 
 # I need a function which I want to call recursivly
 # here is the forward reference
@@ -97,12 +104,12 @@ sub getallchildren;
 =pod
 =head2 function getallchildren($$)
 This function is necessary to generate the nested set.
-It uses the information from the NCBI taxonomy to get from the root to
+It uses the information from the user input to get from the root to
 all leaves and creates the nested set on the way to the leaves.
 =head3 Parameters
 =over
 =item 1.
-current node_id
+current fennec_id
 =item 2.
 current counter for left side of the leave
 =item 3.
@@ -111,12 +118,14 @@ reference to the hash %parenttaxid2index
 reference to the list @nodes
 =item 5.
 reference to the result list @nestedset
+=item 6.
+reference to the hash %fennec_id2node_id
 =back
 =cut
 
 sub getallchildren
 {
-    my ($fennec_id, $lft, $parenttaxid2index, $nodes, $nestedset) = @_;
+    my ($fennec_id, $lft, $parenttaxid2index, $nodes, $nestedset, $fennec_id2node_id) = @_;
 
     if (exists $parenttaxid2index->{$fennec_id})
     {
@@ -138,14 +147,14 @@ sub getallchildren
             # increase the lft
             $lft++;
             # get the rgt by recursivly calling getallchildren
-            my $rgt = getallchildren($nodes->[$act_index]{fennec_id}, $lft, $parenttaxid2index, $nodes, $nestedset);
+            my $rgt = getallchildren($nodes->[$act_index]{fennec_id}, $lft, $parenttaxid2index, $nodes, $nestedset, $fennec_id2node_id);
             # push the value to the nested set
             push(@{$nestedset}, {
                      id => $nodes->[$act_index]{node_id},
                      fennec_id => $nodes->[$act_index]{fennec_id},
                      lft => $lft,
                      rgt => $rgt,
-                     parent_id => $fennec_id2node_id{$nodes->[$act_index]{parent_fennec_id}},
+                     parent_id => $fennec_id2node_id->{$nodes->[$act_index]{parent_fennec_id}},
                      rank => $nodes->[$act_index]{rank}
                     });
             $lft=$rgt;
@@ -158,6 +167,11 @@ sub getallchildren
     return $lft+1;
 }
 
+### TODO sub get_or_insert_provider
+### TODO sub get_or_insert_rank
+
+# Hash to map fennec_ids on node_ids
+my %fennec_id2node_id = ();
 
 # parse the whole file nodes.dmp and put it into the array @nodes
 $log->info("Parsing the file '$options{input}'...");
@@ -176,7 +190,7 @@ close(FH) || $log->logcroak("Unable to close the file $options{input} after read
 $log->info("Parsing the file '$options{input}' returned ".(scalar @nodes)." nodes.");
 
 $log->info("Sorting the nodes by the parent-taxid and the taxid...");
-@nodes = sort 
+@nodes = sort
 {
     $a->{parent_fennec_id} <=> $b->{parent_fennec_id}
     ||
@@ -219,7 +233,7 @@ $log->info("Creation of the parenttaxid2index hash finished.");
 $log->info("Insertion of all nodes into the nested set...");
 
 # generate the nested set
-$nestedset[0]{rgt}=getallchildren($nestedset[0]{fennec_id} ,$nestedset[0]{lft}, \%parenttaxid2index, \@nodes, \@nestedset);
+$nestedset[0]{rgt}=getallchildren($nestedset[0]{fennec_id} ,$nestedset[0]{lft}, \%parenttaxid2index, \@nodes, \@nestedset, \%fennec_id2node_id);
 
 $log->info("Insertion of all nodes into the nested set finished");
 
@@ -230,8 +244,6 @@ $log->info("Sorting the nested set by lft...");
 } @nestedset;
 $log->info("Sorting the nested set by lft finished.");
 
-print Dumper($nestedset[0]);
-
 if ($options{transfer})
 {
     $log->info("Generating output for direct input into the database");
@@ -241,7 +253,7 @@ if ($options{transfer})
     open(DBOUT, "| ".$dbcmd) || $log->logdie("Unable to open the connection to the database: $!");
     foreach my $act_node (@nestedset)
     {
-        #### TODO dbid as user input
+        #### TODO dbid from user input (provider, description -> create if not exists)
         my $dbid = 1;
         my $str = join("|", $act_node->{id}, $act_node->{parent_id}, $act_node->{fennec_id}, $dbid, $act_node->{rank}, $act_node->{lft}, $act_node->{rgt});
         $log->debug("Insert the following line into the database: $str");
