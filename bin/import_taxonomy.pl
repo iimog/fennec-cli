@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use DBI;
 use Getopt::Long;
+use Data::Dumper;
 
 =pod
 =head1 Script import_taxonomy.pl
@@ -93,21 +94,33 @@ unless($dbh){
 }
 $log->info('Successfully connected to the database.');
 
-# Get or insert provider
-my $sth = $dbh->prepare('SELECT db_id FROM db WHERE name = ?');
-$sth->execute($options{provider});
-my $result = $sth->fetchall_arrayref();
-unless(@{$result}){
-    $log->info("No provider with name $options{provider} found. Inserting...");
-    $sth = $dbh->prepare('INSERT INTO db (name, description) VALUES (?, ?) RETURNING db_id');
-    $sth->execute($options{provider}, $options{description});
-    $result = $sth->fetchall_arrayref();
+sub get_max_taxonomy_node_id{
+    my $sth = $dbh->prepare('SELECT MAX(taxonomy_node_id) FROM taxonomy_node');
+    $sth->execute();
+    my $result = $sth->fetchall_arrayref();
+    my $max_id = $result->[0][0];
+    $max_id = 0 unless(defined($max_id));
+    $log->info('The maximum taxonomy_node_id in the db prior to insertion is: '.$max_id);
+    return $max_id;
 }
-$log->info("Provider $options{provider} has id: $result->[0][0]");
 
+sub get_or_insert_provider{
+    my $sth = $dbh->prepare('SELECT db_id FROM db WHERE name = ?');
+    $sth->execute($options{provider});
+    my $result = $sth->fetchall_arrayref();
+    unless(@{$result}){
+        $log->info("No provider with name $options{provider} found. Inserting...");
+        $sth = $dbh->prepare('INSERT INTO db (name, description) VALUES (?, ?) RETURNING db_id');
+        $sth->execute($options{provider}, $options{description});
+        $result = $sth->fetchall_arrayref();
+    }
+    $log->info("Provider $options{provider} has id: $result->[0][0]");
+    return $result->[0][0];
+}
 
+my $start_taxonomy_node_id = get_max_taxonomy_node_id() + 1;
 my $start_left_idx = 1;
-my $start_taxonomy_node_id = 1;
+my $db_id = get_or_insert_provider();
 
 # I need a function which I want to call recursivly
 # here is the forward reference
@@ -268,8 +281,7 @@ if ($options{transfer})
     foreach my $act_node (@nestedset)
     {
         #### TODO dbid from user input (provider, description -> create if not exists)
-        my $dbid = 1;
-        my $str = join("|", $act_node->{id}, $act_node->{parent_id}, $act_node->{fennec_id}, $dbid, $act_node->{rank}, $act_node->{lft}, $act_node->{rgt});
+        my $str = join("|", $act_node->{id}, $act_node->{parent_id}, $act_node->{fennec_id}, $db_id, $act_node->{rank}, $act_node->{lft}, $act_node->{rgt});
         $log->debug("Insert the following line into the database: $str");
         print DBOUT "$str\n";
     }
