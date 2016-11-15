@@ -43,7 +43,7 @@ my %options = (
            "db_name"     => 'fennec',
            "db_host"     => 'localhost',
            "db_port"     => 5432,
-	       "transfer"    => 0,
+	       "transfer"    => 1,
 	       "provider"    => undef,
            "description" => ''
 	      );
@@ -74,10 +74,16 @@ if ($options{help} || !$options{provider} || !$options{input})
     # ...we will print the help message
     print "\n\n***** ".__FILE__." *** version: $VERSION *****\n\n";
     print "Allowed parameters:\n".
-          "\t--[no]download  \tdo (not) fetch sequences from NCBI (default --download)\n".
-	  "\t--[no]transfer  \tdo (not) transfer the nested set into the database (default --notransfer)\n".
-	  "\t--[no]deletetemp\tdo (not) delete temporary files (default --deletetemp)\n".
-	  "\t--help          \tthis message\n\n";
+          "\t--provider      \tname of the taxonomy provider (e.g. ncbi_taxonomy), will be added to db if not exists (required)\n".
+          "\t--input         \tinput tsv file with three columns: fennec_id, parent_fennec_id, rank (required)\n".
+          "\t--description   \tdescription of the taxonomy provider, only used if newly created (default '')\n".
+          "\t--db-user       \tuser of the database (default 'fennec')\n".
+          "\t--db-password   \tpassword of the database user (default 'fennec')\n".
+          "\t--db-name       \tname of the database (default 'fennec')\n".
+          "\t--db-host       \thost of the database (default 'localhost')\n".
+          "\t--db-port       \tport of the database (default 5432)\n".
+          "\t--[no]transfer  \tdo (not) transfer the nested set into the database (default --transfer) The provider and ranks will be created in any case\n".
+          "\t--help          \tthis message\n\n";
 
     # ...end exit without an error
     exit(0);
@@ -217,8 +223,6 @@ sub getallchildren
     }
     return $lft+1;
 }
-
-### TODO sub get_or_insert_rank
 
 # Hash to map fennec_ids on node_ids
 my %fennec_id2node_id = ();
