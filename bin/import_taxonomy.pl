@@ -87,7 +87,6 @@ $log->info("***** ".__FILE__." *** version: $VERSION *****");
 
 $log->info("Options: ".join(", ", map {"$_ = ".((defined $options{$_}) ? $options{$_} : "undef")} (keys %options)));
 
-########## TODO Get max taxonomy_node_id and right_idx
 my $dbh = DBI->connect("dbi:Pg:dbname=$options{db_name};host=$options{db_host};port=$options{db_port};", $options{db_user}, $options{db_password});
 unless($dbh){
     $log->logdie('Unable to connect to the database. Check parameters.');
@@ -102,6 +101,16 @@ sub get_max_taxonomy_node_id{
     $max_id = 0 unless(defined($max_id));
     $log->info('The maximum taxonomy_node_id in the db prior to insertion is: '.$max_id);
     return $max_id;
+}
+
+sub get_max_right_idx{
+    my $sth = $dbh->prepare('SELECT MAX(right_idx) FROM taxonomy_node');
+    $sth->execute();
+    my $result = $sth->fetchall_arrayref();
+    my $max_idx = $result->[0][0];
+    $max_idx = 0 unless(defined($max_idx));
+    $log->info('The maximum right_idx in the db prior to insertion is: '.$max_idx);
+    return $max_idx;
 }
 
 sub get_or_insert_provider{
@@ -119,7 +128,7 @@ sub get_or_insert_provider{
 }
 
 my $start_taxonomy_node_id = get_max_taxonomy_node_id() + 1;
-my $start_left_idx = 1;
+my $start_left_idx = get_max_right_idx() + 1;
 my $db_id = get_or_insert_provider();
 
 # I need a function which I want to call recursivly
