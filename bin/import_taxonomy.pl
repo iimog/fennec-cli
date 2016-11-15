@@ -218,11 +218,13 @@ sub getallchildren
     return $lft+1;
 }
 
-### TODO sub get_or_insert_provider
 ### TODO sub get_or_insert_rank
 
 # Hash to map fennec_ids on node_ids
 my %fennec_id2node_id = ();
+
+# Hash to map ranks on rank_ids
+my %rank2id = ();
 
 # parse the whole file nodes.dmp and put it into the array @nodes
 $log->info("Parsing the file '$options{input}'...");
@@ -233,12 +235,19 @@ while (<FH>)
     chomp;
     my @dat = split(/\t/, $_);
 
-    my $node = {fennec_id => int($dat[0]), parent_fennec_id => int($dat[1]), rank => int($dat[2]), node_id => int(@nodes)+$start_taxonomy_node_id};
+    my $node = {fennec_id => int($dat[0]), parent_fennec_id => int($dat[1]), rank => $dat[2], node_id => int(@nodes)+$start_taxonomy_node_id};
     $fennec_id2node_id{$node->{fennec_id}} = $node->{node_id};
+    $rank2id{$node{rank}} = 0;
     push(@nodes, $node);
 }
 close(FH) || $log->logcroak("Unable to close the file $options{input} after reading!");
 $log->info("Parsing the file '$options{input}' returned ".(scalar @nodes)." nodes.");
+
+# Map ranks to ids (create on the fly if not exists)
+$log->info("Mapping ranks on rank_ids");
+for my $rank (keys %rank2id){
+    $rank2id{$rank} = get_or_insert_rank($rank);
+}
 
 $log->info("Sorting the nodes by the parent-taxid and the taxid...");
 @nodes = sort
@@ -304,8 +313,7 @@ if ($options{transfer})
     open(DBOUT, "| ".$dbcmd) || $log->logdie("Unable to open the connection to the database: $!");
     foreach my $act_node (@nestedset)
     {
-        #### TODO dbid from user input (provider, description -> create if not exists)
-        my $str = join("|", $act_node->{id}, $act_node->{parent_id}, $act_node->{fennec_id}, $db_id, $act_node->{rank}, $act_node->{lft}, $act_node->{rgt});
+        my $str = join("|", $act_node->{id}, $act_node->{parent_id}, $act_node->{fennec_id}, $db_id, $rank2id{$act_node->{rank}}, $act_node->{lft}, $act_node->{rgt});
         $log->debug("Insert the following line into the database: $str");
         print DBOUT "$str\n";
     }
