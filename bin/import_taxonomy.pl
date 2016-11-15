@@ -237,7 +237,7 @@ while (<FH>)
 
     my $node = {fennec_id => int($dat[0]), parent_fennec_id => int($dat[1]), rank => $dat[2], node_id => int(@nodes)+$start_taxonomy_node_id};
     $fennec_id2node_id{$node->{fennec_id}} = $node->{node_id};
-    $rank2id{$node{rank}} = 0;
+    $rank2id{$node->{rank}} = 0;
     push(@nodes, $node);
 }
 close(FH) || $log->logcroak("Unable to close the file $options{input} after reading!");
