@@ -25,36 +25,38 @@ my $conf = q(
 
     log4perl.appender.Screen         = Log::Log4perl::Appender::Screen
     log4perl.appender.Screen.stderr  = 1
-    log4perl.appender.Screen.layout = Log::Log4perl::Layout::SimpleLayout
-  );
+    log4perl.appender.Screen.layout  = Log::Log4perl::Layout::SimpleLayout
+);
 
 Log::Log4perl->init(\$conf);
 my $log = Log::Log4perl->get_logger();
-
-# setting the log level to info, ignoring the settings from the config file
-$log->level($INFO);
 
 my $VERSION = '0.1';
 
 $log->debug("Started the generation of the taxonomy tree (".__FILE__.")");
 
 my %options = (
-	       "input"    => undef,
-	       "help"     => undef,
-	       "db-user"  => 'fennec',
-           "db-password" => 'fennec',
-           "db-name"  => 'fennec',
-           "db-host"  => 'localhost',
-           "db-port"  => 5432,
-	       "transfer" => 0
+	       "input"       => undef,
+	       "help"        => undef,
+	       "db_user"     => 'fennec',
+           "db_password" => 'fennec',
+           "db_name"     => 'fennec',
+           "db_host"     => 'localhost',
+           "db_port"     => 5432,
+	       "transfer"    => 0
 	      );
 
 $log->debug("Parsing the given commandline options");
 
 # try to parse the options given via command line
-if (! GetOptions( "help"        => \$options{help},
-                  "input=s"     => \$options{input},
-                  "transfer!"   => \$options{transfer}))
+if (! GetOptions( "help"          => \$options{help},
+                  "input=s"       => \$options{input},
+                  "db-user=s"     => \$options{db_user},
+                  "db-password=s" => \$options{db_password},
+                  "db-name=s"     => \$options{db_name},
+                  "db-host=s"     => \$options{db_host},
+                  "db-port=i"     => \$options{db_port},
+                  "transfer!"     => \$options{transfer}))
 {
     # if the option parsing was not successful, we want to activate
     # the help function
@@ -83,6 +85,7 @@ $log->info("Options: ".join(", ", map {"$_ = ".((defined $options{$_}) ? $option
 ########## TODO Get max taxonomy_node_id and right_idx
 my $start_left_idx = 1;
 my $start_taxonomy_node_id = 1;
+
 my %fennec_id2node_id = ();
 
 # I need a function which I want to call recursivly
@@ -117,40 +120,40 @@ sub getallchildren
 
     if (exists $parenttaxid2index->{$fennec_id})
     {
-	# get the index range for the parent taxid from the mapping
-	# hash %{$parenttaxid2index}
-	my ($startindex, $endindex) = @{$parenttaxid2index->{$fennec_id}};
-	# check if the endindex is undef... This can be possible, if
-	# the parent taxid is used only once. In this case set the
-	# endindex to the same value as the startindex
-	if (! defined $endindex)
-	{
-	    $endindex = $startindex;
-	}
-	$log->debug("The index range for the parent fennec_id $fennec_id is ".$startindex."-".$endindex);
+        # get the index range for the parent taxid from the mapping
+        # hash %{$parenttaxid2index}
+        my ($startindex, $endindex) = @{$parenttaxid2index->{$fennec_id}};
+        # check if the endindex is undef... This can be possible, if
+        # the parent taxid is used only once. In this case set the
+        # endindex to the same value as the startindex
+        if (! defined $endindex)
+        {
+            $endindex = $startindex;
+        }
+        $log->debug("The index range for the parent fennec_id $fennec_id is ".$startindex."-".$endindex);
 
-	# go through the node list and call for each child the function recursively
-	for (my $act_index = $startindex; $act_index <= $endindex; $act_index++)
-	{
-	    # increase the lft
-	    $lft++;
-	    # get the rgt by recursivly calling getallchildren
-	    my $rgt = getallchildren($nodes->[$act_index]{fennec_id}, $lft, $parenttaxid2index, $nodes, $nestedset);
-	    # push the value to the nested set
-	    push(@{$nestedset}, {
-				 id => $nodes->[$act_index]{node_id},
-				 fennec_id => $nodes->[$act_index]{fennec_id},
-				 lft => $lft,
-				 rgt => $rgt,
-				 parent_id => $fennec_id2node_id{$nodes->[$act_index]{parent_fennec_id}},
-				 rank => $nodes->[$act_index]{rank}
-				});
-	    $lft=$rgt;
-	}
+        # go through the node list and call for each child the function recursively
+        for (my $act_index = $startindex; $act_index <= $endindex; $act_index++)
+        {
+            # increase the lft
+            $lft++;
+            # get the rgt by recursivly calling getallchildren
+            my $rgt = getallchildren($nodes->[$act_index]{fennec_id}, $lft, $parenttaxid2index, $nodes, $nestedset);
+            # push the value to the nested set
+            push(@{$nestedset}, {
+                     id => $nodes->[$act_index]{node_id},
+                     fennec_id => $nodes->[$act_index]{fennec_id},
+                     lft => $lft,
+                     rgt => $rgt,
+                     parent_id => $fennec_id2node_id{$nodes->[$act_index]{parent_fennec_id}},
+                     rank => $nodes->[$act_index]{rank}
+                    });
+            $lft=$rgt;
+	    }
 
     } else
     {
-	$log->debug("Leave erreicht... fennec_id: $fennec_id; lft: $lft; rgt: ".($lft+1));
+	    $log->debug("Leave erreicht... fennec_id: $fennec_id; lft: $lft; rgt: ".($lft+1));
     }
     return $lft+1;
 }
@@ -202,12 +205,12 @@ for (my $index = 0; $index < @nodes; $index++)
 {
     if (exists $parenttaxid2index{$nodes[$index]{parent_fennec_id}})
     {
-	# the current parenttaxid exists as key so I have to update the second item of the list
-	$parenttaxid2index{$nodes[$index]{parent_fennec_id}}[1] = $index;
+        # the current parenttaxid exists as key so I have to update the second item of the list
+        $parenttaxid2index{$nodes[$index]{parent_fennec_id}}[1] = $index;
     } else
     {
-	# the current parenttaxid does not exist so we have to create a new set
-	$parenttaxid2index{$nodes[$index]{parent_fennec_id}} = [$index, undef];
+        # the current parenttaxid does not exist so we have to create a new set
+        $parenttaxid2index{$nodes[$index]{parent_fennec_id}} = [$index, undef];
     }
 }
 $log->info("Creation of the parenttaxid2index hash finished.");
@@ -238,11 +241,11 @@ if ($options{transfer})
     open(DBOUT, "| ".$dbcmd) || $log->logdie("Unable to open the connection to the database: $!");
     foreach my $act_node (@nestedset)
     {
-    #### TODO dbid as user input
-    my $dbid = 1;
-	my $str = join("|", $act_node->{id}, $act_node->{parent_id}, $act_node->{fennec_id}, $dbid, $act_node->{rank}, $act_node->{lft}, $act_node->{rgt});
-	$log->debug("Insert the following line into the database: $str");
-	print DBOUT "$str\n";
+        #### TODO dbid as user input
+        my $dbid = 1;
+        my $str = join("|", $act_node->{id}, $act_node->{parent_id}, $act_node->{fennec_id}, $dbid, $act_node->{rank}, $act_node->{lft}, $act_node->{rgt});
+        $log->debug("Insert the following line into the database: $str");
+        print DBOUT "$str\n";
     }
     close(DBOUT) || $log->logdie("Unable to close the connection to the database $!");
 
