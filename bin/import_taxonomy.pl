@@ -127,6 +127,21 @@ sub get_or_insert_provider{
     return $result->[0][0];
 }
 
+sub get_or_insert_rank{
+    my $name = $_[0];
+    my $sth = $dbh->prepare('SELECT rank_id FROM rank WHERE name = ?');
+    $sth->execute($name);
+    my $result = $sth->fetchall_arrayref();
+    unless(@{$result}){
+        $log->info("Rank '$name' missing. Inserting...");
+        $sth = $dbh->prepare('INSERT INTO rank (name) VALUES (?) RETURNING rank_id');
+        $sth->execute($name);
+        $result = $sth->fetchall_arrayref();
+        $log->info("Rank '$name' has id: $result->[0][0]");
+    }
+    return $result->[0][0];
+}
+
 my $start_taxonomy_node_id = get_max_taxonomy_node_id() + 1;
 my $start_left_idx = get_max_right_idx() + 1;
 my $db_id = get_or_insert_provider();
