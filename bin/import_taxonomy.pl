@@ -92,6 +92,20 @@ unless($dbh){
     $log->logdie('Unable to connect to the database. Check parameters.');
 }
 $log->info('Successfully connected to the database.');
+
+# Get or insert provider
+my $sth = $dbh->prepare('SELECT db_id FROM db WHERE name = ?');
+$sth->execute($options{provider});
+my $result = $sth->fetchall_arrayref();
+unless(@{$result}){
+    $log->info("No provider with name $options{provider} found. Inserting...");
+    $sth = $dbh->prepare('INSERT INTO db (name, description) VALUES (?, ?) RETURNING db_id');
+    $sth->execute($options{provider}, $options{description});
+    $result = $sth->fetchall_arrayref();
+}
+$log->info("Provider $options{provider} has id: $result->[0][0]");
+
+
 my $start_left_idx = 1;
 my $start_taxonomy_node_id = 1;
 
