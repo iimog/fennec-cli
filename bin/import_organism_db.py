@@ -47,24 +47,49 @@ def get_or_insert_provider(provider, description):
     return rows[0][0]
 
 def insert_organism(sciname):
+    name_count = len(sciname)
+    placeholder = "(%s)," * (name_count-1) + "(%s)"
     with conn:
         with conn.cursor() as cur:
-            cur.execute("INSERT INTO organism (scientific_name) VALUES (%s) RETURNING fennec_id", (sciname,))
+            cur.execute("INSERT INTO organism (scientific_name) VALUES "+placeholder+" RETURNING fennec_id", sciname)
             rows = cur.fetchall()
-    return rows[0][0]
+    return rows
 
-provider_id = get_or_insert_provider(options.provider, options.description)
+provider_id = str(get_or_insert_provider(options.provider, options.description))
 
-def insert_fennec_dbxref(fennec_id, identifier):
+def insert_fennec_dbxref(fennec_id_identifier):
+    dbxref_count = len(fennec_id_identifier)/2
+    print(dbxref_count)
+    dbxref_count = int(dbxref_count)
+    placeholder = ("("+provider_id+",%s,%s),") * (dbxref_count-1) + "("+provider_id+",%s,%s)"
     with conn:
         with conn.cursor() as cur:
-            cur.execute("INSERT INTO fennec_dbxref (db_id, identifier, fennec_id) VALUES (%s, %s, %s)", (provider_id, identifier, fennec_id))
+            cur.execute("INSERT INTO fennec_dbxref (db_id, fennec_id, identifier) VALUES "+placeholder, fennec_id_identifier)
 
 
 with open(args[0]) as csvfile:
     reader = csv.reader(csvfile, delimiter="\t")
+    known_fennec_ids = list()
+    known_identifiers = list()
+    unknown_fennec_ids = list()
+    unknown_identifiers = list()
+    unknown_scinames = list()
     for row in reader:
         (sciname, identifier, fennec_id) = row
         if fennec_id == '':
-            fennec_id = insert_organism(sciname)
-        insert_fennec_dbxref(fennec_id, identifier)
+            unknown_identifiers.append(identifier)
+            unknown_scinames.append(sciname)
+        else:
+            known_fennec_ids.append(fennec_id)
+            known_identifiers.append(identifier)
+    print("Done reading file")
+    unknown_fennec_ids = insert_organism(tuple(unknown_scinames))
+    print("Done inserting organisms")
+    fennec_ids = known_fennec_ids + unknown_fennec_ids
+    identifiers = known_identifiers + unknown_identifiers
+    fennec_ids_identifiers = list()
+    for i in range(0, len(fennec_ids)):
+        fennec_ids_identifiers.append(fennec_ids[i])
+        fennec_ids_identifiers.append(identifiers[i])
+    insert_fennec_dbxref(tuple(fennec_ids_identifiers))
+    print("Done inserting fennec_dbxref")
