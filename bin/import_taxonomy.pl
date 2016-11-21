@@ -10,7 +10,7 @@ use Getopt::Long;
 =head2 Description
 This script creates a new taxonomy tree and puts it into the database
 =head2 Authors
-=over 
+=over
 =item + Frank Foerster and Markus Ankenbrand
 =back
 =cut
@@ -300,7 +300,7 @@ $nestedset[0]{rgt}=getallchildren($nestedset[0]{fennec_id} ,$nestedset[0]{lft}, 
 $log->info("Insertion of all nodes into the nested set finished");
 
 $log->info("Sorting the nested set by lft...");
-@nestedset = sort 
+@nestedset = sort
 {
     $a->{lft} <=> $b->{lft}
 } @nestedset;
@@ -310,7 +310,7 @@ if ($options{transfer})
 {
     $log->info("Generating output for direct input into the database");
 
-    my $dbcmd = "psql -h 172.18.0.2 -d fennectest -U fennectest -p 5432 -c \"\\copy taxonomy_node (taxonomy_node_id,parent_taxonomy_node_id,fennec_id,db_id,rank_id,left_idx,right_idx) FROM STDIN WITH NULL AS 'NULL' DELIMITER '\|'\"";
+    my $dbcmd = "psql -h $options{db_host} -d $options{db_name} -U $options{db_user} -p $options{db_port} -c \"\\copy taxonomy_node (taxonomy_node_id,parent_taxonomy_node_id,fennec_id,db_id,rank_id,left_idx,right_idx) FROM STDIN WITH NULL AS 'NULL' DELIMITER '\|'\"";
 
     open(DBOUT, "| ".$dbcmd) || $log->logdie("Unable to open the connection to the database: $!");
     foreach my $act_node (@nestedset)
