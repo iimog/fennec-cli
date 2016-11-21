@@ -83,8 +83,9 @@ with open(args[0]) as csvfile:
             known_fennec_ids.append(fennec_id)
             known_identifiers.append(identifier)
     print("Done reading file")
-    unknown_fennec_ids = insert_organism(tuple(unknown_scinames))
-    print("Done inserting organisms")
+    if len(unknown_scinames) > 0:
+        unknown_fennec_ids = insert_organism(tuple(unknown_scinames))
+        print("Done inserting organisms")
     fennec_ids = known_fennec_ids + unknown_fennec_ids
     identifiers = known_identifiers + unknown_identifiers
     fennec_ids_identifiers = list()
