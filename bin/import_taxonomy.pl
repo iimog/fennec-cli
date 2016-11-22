@@ -30,7 +30,7 @@ my $conf = q(
 Log::Log4perl->init(\$conf);
 my $log = Log::Log4perl->get_logger();
 
-my $VERSION = '0.1';
+my $VERSION = '0.4.0';
 
 $log->debug("Started the generation of the taxonomy tree (".__FILE__.")");
 

@@ -2,6 +2,13 @@
 This repo contains the command line programs to import data into Fennec databases
 along with documentation and instructions on how to use them.
 ** Changes
+*** 0.4.0 <2016-11-22 Di>
+ - Use db schema version 0.4.0
+ - Add script to download IUCN data via API
+ - Add importer for traits in tsv format
+ - Add importer for taxonomies
+ - Add importer for alternative names
+ - Add importer for organism databases
 *** 0.2.0 <2016-10-10 Mo>
  - Table importer for updated trait database schema
 *** 0.1.0 <2016-04-11 Mo>

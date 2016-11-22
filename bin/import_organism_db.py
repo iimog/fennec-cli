@@ -5,7 +5,7 @@ import psycopg2
 import csv
 from optparse import OptionParser
 
-version = "0.1"
+version = "0.4.0"
 usage = "Usage: %prog [options --description=DESCRIPTION] --provider=PROVIDER FILE.tsv\n"
 usage += "The tsv file has to have the following columns:\n"
 usage += "scientific_name\tidentifier\tfennec_id\n"

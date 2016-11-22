@@ -5,7 +5,7 @@ import psycopg2
 import csv
 from optparse import OptionParser
 
-version = "0.1"
+version = "0.4.0"
 usage = "Usage: %prog [options] --trait-type=TRAIT_TYPE --user-id=USER_ID FILE.tsv\n"
 usage += "The tsv file has to have the following columns:\n"
 usage += "fennec_id\tvalue\tvalue_ontology\tcitation\torigin_url\tprivate\tcreation_date\tdeletion_date\n"
