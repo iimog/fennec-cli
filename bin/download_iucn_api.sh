@@ -30,3 +30,6 @@ done
 
 cat ${TMP_PREFIX}*.json | jq '.result[]' >$OUT_FILE
 echo "IUCN file for version $VERSION created: $OUT_FILE ... done"
+
+jq -r '(.taxonid | tostring)+"\t"+.kingdom_name+"\t"+.phylum_name+"\t"+.class_name+"\t"+.order_name+"\t"+.family_name+"\t"+.genus_name+"\t"+.scientific_name+"\t"+.infra_rank+"\t"+.infra_name+"\t"+.population+"\t"+.category' $OUT_FILE | sort -u >IUCN-${VERSION}.tsv
+
