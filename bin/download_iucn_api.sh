@@ -1,15 +1,18 @@
 #!/bin/bash
 
-TOKEN=$(cat .iucn_token)
+set -o nounset
+set -o errexit
 
-VERSION=$(curl "apiv3.iucnredlist.org/api/v3/version" | jq --raw-output '.version')
-OUT_FILE=IUCN-${VERSION}.json
-
-if [ -e $OUT_FILE ]
+if [ -e .iucn_token ]
 then
-    echo "IUCN file for version $VERSION exists: $OUT_FILE ... nothing to do"
-    exit 0
+    TOKEN=$(<.iucn_token)
+else
+    echo "No IUCN API token found. Store it in .iucn_token"
+    exit 1
 fi
+
+VERSION=$1
+OUT_FILE=$2
 
 GET_NEXT=true
 PAGE="0"
