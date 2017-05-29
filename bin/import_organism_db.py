@@ -42,7 +42,7 @@ def get_or_insert_provider(provider, description):
             rows = cur.fetchall()
             if (len(rows) < 1):
                 print("Creating provider " + provider)
-                cur.execute("INSERT INTO db (name, description) VALUES (%s, %s) RETURNING db_id", (provider, description))
+                cur.execute("INSERT INTO db (name, description, date) VALUES (%s, %s, NOW()) RETURNING db_id", (provider, description))
                 rows = cur.fetchall()
     return rows[0][0]
 
