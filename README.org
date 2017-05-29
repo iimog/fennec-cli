@@ -1,6 +1,8 @@
 * Command line tools for Fennec
-This repo contains the command line programs to import data into Fennec databases
-along with documentation and instructions on how to use them.
+This repo contains legacy command line programs to import data into Fennec databases
+along with some helper scripts.
+They will be ported to symfony php commands.
+As soon as they have all been replaced this repo will no longer be used.
 ** Changes
 *** 0.4.0 <2016-11-22 Di>
  - Use db schema version 0.4.0
