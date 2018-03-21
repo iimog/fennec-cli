@@ -118,12 +118,12 @@ sub get_max_right_idx{
 }
 
 sub get_or_insert_provider{
-    my $sth = $dbh->prepare('SELECT db_id FROM db WHERE name = ?');
+    my $sth = $dbh->prepare('SELECT id FROM db WHERE name = ?');
     $sth->execute($options{provider});
     my $result = $sth->fetchall_arrayref();
     unless(@{$result}){
         $log->info("No provider with name $options{provider} found. Inserting...");
-        $sth = $dbh->prepare('INSERT INTO db (name, description) VALUES (?, ?) RETURNING db_id');
+        $sth = $dbh->prepare('INSERT INTO db (name, description) VALUES (?, ?) RETURNING id');
         $sth->execute($options{provider}, $options{description});
         $result = $sth->fetchall_arrayref();
     }
@@ -310,7 +310,7 @@ if ($options{transfer})
 {
     $log->info("Generating output for direct input into the database");
 
-    my $dbcmd = "psql -h $options{db_host} -d $options{db_name} -U $options{db_user} -p $options{db_port} -c \"\\copy taxonomy_node (taxonomy_node_id,parent_taxonomy_node_id,fennec_id,db_id,rank_id,left_idx,right_idx) FROM STDIN WITH NULL AS 'NULL' DELIMITER '\|'\"";
+    my $dbcmd = "PGPASSWORD=$options{db_password} psql -h $options{db_host} -d $options{db_name} -U $options{db_user} -p $options{db_port} -c \"\\copy taxonomy_node (taxonomy_node_id,parent_taxonomy_node_id,fennec_id,id,rank_id,left_idx,right_idx) FROM STDIN WITH NULL AS 'NULL' DELIMITER '\|'\"";
 
     open(DBOUT, "| ".$dbcmd) || $log->logdie("Unable to open the connection to the database: $!");
     foreach my $act_node (@nestedset)
