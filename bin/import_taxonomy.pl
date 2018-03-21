@@ -310,7 +310,7 @@ if ($options{transfer})
 {
     $log->info("Generating output for direct input into the database");
 
-    my $dbcmd = "PGPASSWORD=$options{db_password} psql -h $options{db_host} -d $options{db_name} -U $options{db_user} -p $options{db_port} -c \"\\copy taxonomy_node (taxonomy_node_id,parent_taxonomy_node_id,fennec_id,id,rank_id,left_idx,right_idx) FROM STDIN WITH NULL AS 'NULL' DELIMITER '\|'\"";
+    my $dbcmd = "PGPASSWORD=$options{db_password} psql -h $options{db_host} -d $options{db_name} -U $options{db_user} -p $options{db_port} -c \"\\copy taxonomy_node (taxonomy_node_id,parent_taxonomy_node_id,fennec_id,db_id,rank_id,left_idx,right_idx) FROM STDIN WITH NULL AS 'NULL' DELIMITER '\|'\"";
 
     open(DBOUT, "| ".$dbcmd) || $log->logdie("Unable to open the connection to the database: $!");
     foreach my $act_node (@nestedset)
